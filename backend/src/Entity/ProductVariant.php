@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\ProductVariantRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: ProductVariantRepository::class)]
 class ProductVariant
@@ -11,6 +12,7 @@ class ProductVariant
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+  #[Groups(['product:read'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'variants')]
@@ -18,9 +20,11 @@ class ProductVariant
     private ?Product $product = null;
 
     #[ORM\Column(length: 10)]
+  #[Groups(['product:read'])]
     private ?string $size = null;
 
     #[ORM\Column]
+  #[Groups(['product:read'])]
     private ?int $stock = null;
 
     public function getId(): ?int

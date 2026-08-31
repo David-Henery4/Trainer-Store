@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
 class Product
@@ -14,25 +15,32 @@ class Product
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+  #[Groups(['product:read'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'products')]
     #[ORM\JoinColumn(nullable: false)]
+  #[Groups(['product:read'])]
     private ?Category $category = null;
 
     #[ORM\Column(length: 180)]
+  #[Groups(['product:read'])]
     private ?string $brand = null;
 
     #[ORM\Column(length: 180)]
+  #[Groups(['product:read'])]
     private ?string $name = null;
 
     #[ORM\Column(length: 180)]
+  #[Groups(['product:read'])]
     private ?string $slug = null;
 
     #[ORM\Column(type: Types::TEXT)]
+  #[Groups(['product:read'])]
     private ?string $description = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+  #[Groups(['product:read'])]
     private ?string $price = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -51,6 +59,7 @@ class Product
      * @var Collection<int, ProductVariant>
      */
     #[ORM\OneToMany(targetEntity: ProductVariant::class, mappedBy: 'product')]
+  #[Groups(['product:read'])]
     private Collection $variants;
 
     public function __construct()
