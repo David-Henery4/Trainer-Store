@@ -13,14 +13,19 @@ use Symfony\Component\Serializer\SerializerInterface;
 final class ProductController extends AbstractController
 {
   #[Route('/api/products', methods: ['GET'])]
-    public function index(EntityManagerInterface $enity, SerializerInterface $serializer): JsonResponse
-    {
+  public function index(EntityManagerInterface $enity, SerializerInterface $serializer): JsonResponse
+  {
 
     $products = $enity->getRepository(Product::class)->findAll();
 
     $json_content = $serializer->serialize($products, "json", ['groups' => ['product:read']]);
 
     return JsonResponse::fromJsonString($json_content);
-    
-    }
+  }
+
+  #[Route('/api/products/{id}', methods: ['GET'])]
+  public function show(Product $product): JsonResponse
+  {
+    return $this->json($product, 200, [], ['groups' => ['product:read']]);
+  }
 }
