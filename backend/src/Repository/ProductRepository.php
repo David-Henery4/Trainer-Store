@@ -16,6 +16,23 @@ class ProductRepository extends ServiceEntityRepository
         parent::__construct($registry, Product::class);
     }
 
+  public function findFilteredAndSorted(?string $category, ?string $size, string $sort, string $order): array
+  {
+    $qb = $this->createQueryBuilder('p');
+
+    if ($category) {
+      $qb->join('p.category', 'c')->andWhere('c.slug = :category')->setParameter('category', $category);
+    }
+
+    if ($size) {
+      $qb->andWhere('p.size = :size')->setParameter('size', $size);
+    }
+
+    $qb->orderBy('p.' . $sort, $order);
+
+    return $qb->getQuery()->getResult();
+  }
+
     //    /**
     //     * @return Product[] Returns an array of Product objects
     //     */

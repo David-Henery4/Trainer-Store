@@ -1,7 +1,6 @@
 
 <script lang="ts">
   let {data} = $props()
-  const testProductsEmpty = []
 </script>
 
 {#if data.products.length <= 0}

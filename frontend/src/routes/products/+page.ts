@@ -1,14 +1,18 @@
 import { error, isHttpError } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 
-export const load: PageLoad = async ({ fetch }) => {
+export const load: PageLoad = async ({ fetch, url }) => {
+
+  const apiUrl = new URL('http://localhost:8000/api/products');
+  apiUrl.search = url.searchParams.toString();
+
 	const controller = new AbortController();
 	const timeout = setTimeout(() => {
 		controller.abort();
 	}, 5000);
 
 	try {
-		const response = await fetch('http://localhost:8000/api/products', {
+		const response = await fetch(apiUrl, {
 			signal: controller.signal,
 			headers: {
 				Accept: 'application/json'
