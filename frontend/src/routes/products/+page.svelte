@@ -1,9 +1,15 @@
 
 <script lang="ts">
   let {data} = $props()
+  const testProductsEmpty = []
 </script>
 
-{#each data.products as product}
+{#if data.products.length <= 0}
+  <div>
+    There are no products.
+  </div>
+  {:else}
+  {#each data.products as product}
   <div class="mb-12">
     <a href={`/products/${product.id}`}>
       <h1>
@@ -12,3 +18,5 @@
     </a>
   </div>
 {/each}
+{/if}
+
