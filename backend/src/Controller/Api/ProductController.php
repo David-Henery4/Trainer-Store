@@ -30,6 +30,8 @@ final class ProductController extends AbstractController
     //   $sort,
     //   $order);
 
+    // dd($request->query->get('order'));
+
     $category = $request->query->get('category');
     $size = $request->query->get('size');
     $sort = $request->query->get('sort', 'name');
