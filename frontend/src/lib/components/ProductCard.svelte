@@ -1,6 +1,13 @@
 <script lang="ts">
     let { product } = $props();
+
+    
 </script>
 
-<h2>{product.name}</h2>
-<p>{product.price}</p>
+<div class="mb-12">
+    <a href={`/products/${product.id}`}>
+      <h1>
+        {product.name}
+      </h1>
+    </a>
+  </div>

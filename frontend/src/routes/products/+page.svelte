@@ -1,5 +1,6 @@
 
 <script lang="ts">
+  import ProductCard from "$lib/components/ProductCard.svelte";
   let {data} = $props()
 </script>
 
@@ -9,13 +10,9 @@
   </div>
   {:else}
   {#each data.products as product}
-  <div class="mb-12">
-    <a href={`/products/${product.id}`}>
-      <h1>
-        {product.name}
-      </h1>
-    </a>
-  </div>
+  <ProductCard product={product} />
 {/each}
 {/if}
+
+
 
