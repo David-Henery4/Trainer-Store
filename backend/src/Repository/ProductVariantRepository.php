@@ -22,11 +22,7 @@ class ProductVariantRepository extends ServiceEntityRepository
 
     $qb = $this->createQueryBuilder('pv');
 
-    $variants = $qb
-      ->where($qb->expr()->in('pv.id', ':variantIds'))
-      ->setParameter('variantIds', $variantIds)
-      ->getQuery()
-      ->getResult();
+    $variants = $qb->leftJoin('pv.product', 'p')->addSelect('p')->where('pv.id IN (:variantIds)')->setParameter('variantIds', $variantIds)->getQuery()->getResult();
 
     $variantsById = [];
 
@@ -36,6 +32,7 @@ class ProductVariantRepository extends ServiceEntityRepository
 
     $isInStock = true;
     $total = 0;
+    $checkedItems = [];
 
     foreach ($orderItems as $orderItem) {
       $variantId = $orderItem['productVariantId'];
@@ -45,21 +42,35 @@ class ProductVariantRepository extends ServiceEntityRepository
         return [
           'isInStock' => false,
           'total' => 0,
+          'items' => []
         ];
       }
 
       $variant = $variantsById[$variantId];
 
+      $product = $variant->getProduct();
+
       if ($variant->getStock() < $quantity) {
         $isInStock = false;
       }
 
-      $total += $variant->getPrice() * $quantity;
+      $price = $product->getPrice();
+
+      $total += $price * $quantity;
+
+      $checkedItems[] = [
+        'variant' => $variant,
+        'product' => $product,
+        'quantity' => $quantity,
+        'unitPrice' => $price
+      ];
+
     }
 
     return [
       'isInStock' => $isInStock,
       'total' => $total,
+      'items' => $checkedItems
     ];
   }
 
