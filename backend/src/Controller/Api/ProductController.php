@@ -11,6 +11,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 use App\Repository\ProductRepository;
+use Symfony\Component\HttpFoundation\Response;
 
 final class ProductController extends AbstractController
 {
@@ -51,5 +52,55 @@ final class ProductController extends AbstractController
   public function show(Product $product): JsonResponse
   {
     return $this->json($product, 200, [], ['groups' => ['product:read']]);
+  }
+
+  // Admin only functions
+  #[Route('/api/products', methods: ["POST"])]
+  public function create(Request $request, EntityManagerInterface $entityManager){
+    $data = $request->toArray();
+
+    // Validation & Return Error if needed
+
+    // Send to database
+    $productName = $data["name"];
+    $productBrand = $data["brand"];
+    $productSlug = $data["slug"];
+    $productDescription = $data["description"];
+    $productPrice = $data["price"];
+    $productImageUrl = $data["image_url"];
+    $productisActive = $data["is_active"];
+    //
+    $productCategoryId = $data["category_id"];
+    //
+    $newProduct = new Product();
+    //
+    $newProduct->setName($productName);
+    $newProduct->setPrice($productPrice);
+    $newProduct->setBrand($productBrand);
+    $newProduct->setSlug($productSlug);
+    $newProduct->setDescription($productDescription);
+    $newProduct->setImageUrl($productImageUrl);
+    $newProduct->setIsActive($productisActive);
+    //
+    $newProduct->setCreatedAt(new \DateTimeImmutable());
+    // $newProduct->setUpdatedAt($productupdatedAt);
+    //
+    $entityManager->persist($newProduct);
+    //
+    $entityManager->flush();
+
+
+    // Return Success msg
+
+  }
+
+  #[Route("/api/products/{id}", methods: ["PATCH"])]
+  public function update(Request $request) {
+    
+  }
+  
+  #[Route('/api/products/{id}', methods: ["DELETE"])]
+  public function delete(Request $request) {
+    
   }
 }
