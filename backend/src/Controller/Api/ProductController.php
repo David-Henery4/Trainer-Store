@@ -12,6 +12,9 @@ use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 use App\Repository\ProductRepository;
 use Symfony\Component\HttpFoundation\Response;
+use App\Repository\CategoryRepository;
+use App\DTO\CreateProductRequest;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class ProductController extends AbstractController
 {
@@ -56,34 +59,69 @@ final class ProductController extends AbstractController
 
   // Admin only functions
   #[Route('/api/products', methods: ["POST"])]
-  public function create(Request $request, EntityManagerInterface $entityManager){
-    $data = $request->toArray();
+  public function create(
+    Request $request,
+    EntityManagerInterface $entityManager,
+    CategoryRepository $categoryRepository,
+    SerializerInterface $serializer,
+    ValidatorInterface $validator,
+  ): JsonResponse {
 
-    // Validation & Return Error if needed
+    /** @var CreateProductRequest $productRequest */
+    $productRequest = $serializer->deserialize(
+      $request->getContent(),
+      CreateProductRequest::class,
+      'json'
+    );
+
+    $errors = $validator->validate($productRequest);
+    if (count($errors) > 0) {
+      $formattedErrors = [];
+
+      foreach ($errors as $error) {
+        $field = $error->getPropertyPath();
+
+        $formattedErrors[$field][] = $error->getMessage();
+      }
+
+      return $this->json(
+        ['errors' => $formattedErrors],
+        Response::HTTP_UNPROCESSABLE_ENTITY
+      );
+    }
+
+    // Get & check category
+    $category = $categoryRepository->find(
+      $productRequest->categoryId
+    );
+
+    if (!$category) {
+      return $this->json(
+        [
+          'errors' => [
+            'category_id' => [
+              'The selected category does not exist.'
+            ]
+          ]
+        ],
+        Response::HTTP_UNPROCESSABLE_ENTITY
+      );
+    }
 
     // Send to database
-    $productName = $data["name"];
-    $productBrand = $data["brand"];
-    $productSlug = $data["slug"];
-    $productDescription = $data["description"];
-    $productPrice = $data["price"];
-    $productImageUrl = $data["image_url"];
-    $productisActive = $data["is_active"];
-    //
-    $productCategoryId = $data["category_id"];
-    //
     $newProduct = new Product();
     //
-    $newProduct->setName($productName);
-    $newProduct->setPrice($productPrice);
-    $newProduct->setBrand($productBrand);
-    $newProduct->setSlug($productSlug);
-    $newProduct->setDescription($productDescription);
-    $newProduct->setImageUrl($productImageUrl);
-    $newProduct->setIsActive($productisActive);
+    $newProduct->setName($productRequest->name);
+    $newProduct->setBrand($productRequest->brand);
+    $newProduct->setSlug($productRequest->slug);
+    $newProduct->setDescription($productRequest->description);
+    $newProduct->setPrice($productRequest->price);
+    $newProduct->setImageUrl($productRequest->imageUrl);
+    $newProduct->setIsActive($productRequest->isActive);
+    $newProduct->setCategory($category);
     //
     $newProduct->setCreatedAt(new \DateTimeImmutable());
-    // $newProduct->setUpdatedAt($productupdatedAt);
+    $newProduct->setUpdatedAt(new \DateTimeImmutable());
     //
     $entityManager->persist($newProduct);
     //
@@ -91,16 +129,17 @@ final class ProductController extends AbstractController
 
 
     // Return Success msg
-
+    return $this->json(
+      $newProduct,
+      Response::HTTP_CREATED,
+      [],
+      ['groups' => ['product:read']]
+    );
   }
 
   #[Route("/api/products/{id}", methods: ["PATCH"])]
-  public function update(Request $request) {
-    
-  }
-  
+  public function update(Request $request) {}
+
   #[Route('/api/products/{id}', methods: ["DELETE"])]
-  public function delete(Request $request) {
-    
-  }
+  public function delete(Request $request) {}
 }
