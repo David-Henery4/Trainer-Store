@@ -14,6 +14,7 @@ use App\Repository\ProductRepository;
 use Symfony\Component\HttpFoundation\Response;
 use App\Repository\CategoryRepository;
 use App\DTO\CreateProductRequest;
+use App\DTO\UpdateProductRequest;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class ProductController extends AbstractController
@@ -137,8 +138,81 @@ final class ProductController extends AbstractController
     );
   }
 
-  #[Route("/api/products/{id}", methods: ["PATCH"])]
-  public function update(Request $request) {}
+  // Will need to update to "patch" & the DTO
+  // If to change it to update single properties
+  // Instead of the whole product object.
+  #[Route("/api/products/{id}", methods: ["PUT"])]
+  public function update(
+    Product $product,
+    Request $request,
+    EntityManagerInterface $entityManager,
+    CategoryRepository $categoryRepository,
+    SerializerInterface $serializer,
+    ValidatorInterface $validator
+  ) {
+    
+    
+    // Deserialise and validate request data
+    // (Also formats it fron JSON to camelCase) Helps to work with it in PHP
+    /** @var UpdateProductRequest $productRequest */
+    $productRequest = $serializer->deserialize(
+      $request->getContent(),
+      UpdateProductRequest::class,
+      'json'
+    );
+    
+    
+    // Error Handling
+    $errors = $validator->validate($productRequest);
+    if (count($errors) > 0) {
+      $formattedErrors = [];
+      //
+      foreach ($errors as $error) {
+        $field = $error->getPropertyPath();
+        $formattedErrors[$field][] = $error->getMessage();
+      }
+    //
+      return $this->json(
+        ['errors' => $formattedErrors],
+        Response::HTTP_UNPROCESSABLE_ENTITY
+      );
+    }
+    //
+    $category = $categoryRepository->find(
+      $productRequest->categoryId
+    );
+    //
+    if (!$category) {
+      return $this->json(
+        [
+          'errors' => [
+            'category_id' => [
+              'The selected category does not exist.'
+            ]
+          ]
+        ],
+        Response::HTTP_UNPROCESSABLE_ENTITY
+      );
+    }
+    //
+    $product->setName($productRequest->name);
+    $product->setBrand($productRequest->brand);
+    $product->setSlug($productRequest->slug);
+    $product->setDescription($productRequest->description);
+    $product->setPrice($productRequest->price);
+    $product->setImageUrl($productRequest->imageUrl);
+    $product->setIsActive($productRequest->isActive);
+    $product->setCategory($category);
+    $product->setUpdatedAt(new \DateTimeImmutable());
+    //
+    $entityManager->flush();
+    return $this->json(
+      $product,
+      Response::HTTP_OK,
+      [],
+      ['groups' => ['product:read']]
+    );
+  }
 
   #[Route('/api/products/{id}', methods: ["DELETE"])]
   public function delete(Request $request) {}

@@ -2,8 +2,9 @@
 
 namespace App\Controller\Api;
 //
-use App\Entity\Category; 
+use App\Entity\Category;
 use App\Repository\CategoryRepository;
+use App\DTO\CreateCategoryRequest;
 //
 use Doctrine\ORM\EntityManagerInterface;
 //
@@ -27,68 +28,84 @@ final class CategoryController extends AbstractController
   }
 
   #[Route('/api/category', methods: ['POST'])]
-  public function create(Request $request, EntityManagerInterface $entityManager, ValidatorInterface $validator): JsonResponse
+  public function create(Request $request, EntityManagerInterface $entityManager, ValidatorInterface $validator, SerializerInterface $serializer): JsonResponse
   {
 
-    // Validation
-    $constraints = new Assert\Collection([
-      'name' => [
-        new Assert\NotBlank(),
-        new Assert\Type('string')
-      ],
-      'slug' => [
-        new Assert\NotBlank(),
-        new Assert\Type('string')
-      ],
-    ]);
-    
-    // Format JSON
-    $data = $request->toArray();
+    // (These were the old way, now we use DTO)
 
+    // // Validation
+    // $constraints = new Assert\Collection([
+    //   'name' => [
+    //     new Assert\NotBlank(),
+    //     new Assert\Type('string')
+    //   ],
+    //   'slug' => [
+    //     new Assert\NotBlank(),
+    //     new Assert\Type('string')
+    //   ],
+    // ]);
+    // // Format JSON
+    // $data = $request->toArray();
     // Validate & handle errors
-    $errors = $validator->validate($data, $constraints);
+    // $errors = $validator->validate($data, $constraints);
+    // Add to database
+    // Grab data from request
+    // $categoryName = $data["name"];
+    // $categorySlug = $data["slug"];
+    
+  //
+
+
+// This here is using the DTO
+    /** @var CreateCategoryRequest $categoryRequest */
+    $categoryRequest = $serializer->deserialize($request->getContent(), CreateCategoryRequest::class, "json");
+
+    $errors = $validator->validate($categoryRequest);
 
     // if validation fails
     if (count($errors) > 0) {
       $formattedErrors = [];
+
       foreach ($errors as $error) {
-        $formattedErrors[] = [
-          'field' => $error->getPropertyPath(),
-          'message' => $error->getMessage()
-        ];
-      };
-      return $this->json(['errors' => $formattedErrors], Response::HTTP_UNPROCESSABLE_ENTITY);
-    };
-    
-    
-    // Add to database
-    // Grab data from request
-    $categoryName = $data["name"];
-    $categorySlug = $data["slug"];
-    
+        $field = $error->getPropertyPath();
+
+        $formattedErrors[$field][] = $error->getMessage();
+      }
+
+      return $this->json(
+        ['errors' => $formattedErrors],
+        Response::HTTP_UNPROCESSABLE_ENTITY
+      );
+    }
+
     // Create new Category Instance
     $newCategory = new Category();
-    $newCategory->setName($categoryName);
-    $newCategory->setSlug($categorySlug);
-    
+    $newCategory->setName($categoryRequest->name);
+    $newCategory->setSlug($categoryRequest->slug);
+
     // persist
     $entityManager->persist($newCategory);
-    
+
     // flush
     $entityManager->flush();
-    
+
     // return response
     return $this->json($newCategory, Response::HTTP_CREATED, [], ["groups" => ["category:read"]]);
   }
 
   #[Route('/api/category/{id}', methods: ["PUT"])]
-  public function edit(Category $category, EntityManagerInterface $entityManager, Request $request, SerializerInterface $serializer,
-    ValidatorInterface $validator) {
+  public function edit(
+    Category $category,
+    EntityManagerInterface $entityManager,
+    Request $request,
+    SerializerInterface $serializer,
+    ValidatorInterface $validator
+  ) {
 
     // deserialise data
-  $serializer->deserialize($request->getContent(), Category::class, "json", ["object_to_populate" => $category]);
+    $serializer->deserialize($request->getContent(), Category::class, "json", ["object_to_populate" => $category]);
 
-    
+
     $errors = $validator->validate($category);
 
     if (count($errors) > 0) {
@@ -104,7 +121,7 @@ final class CategoryController extends AbstractController
         Response::HTTP_UNPROCESSABLE_ENTITY
       );
     }
-    
+
     // Flush
     $entityManager->flush();
 
@@ -114,11 +131,11 @@ final class CategoryController extends AbstractController
       [],
       ['groups' => ['category:read']]
     );
-  
   }
 
   #[Route('/api/category/{id}', methods: ['DELETE'])]
-  public function delete(Category $category, EntityManagerInterface $entityManager): JsonResponse {
+  public function delete(Category $category, EntityManagerInterface $entityManager): JsonResponse
+  {
     $entityManager->remove($category);
     $entityManager->flush();
     return $this->json(
