@@ -5,6 +5,7 @@ namespace App\Controller\Api;
 use App\Entity\Category;
 use App\Repository\CategoryRepository;
 use App\DTO\CreateCategoryRequest;
+use App\DTO\UpdateCategoryRequest;
 //
 use Doctrine\ORM\EntityManagerInterface;
 //
@@ -103,10 +104,10 @@ final class CategoryController extends AbstractController
   ) {
 
     // deserialise data
-    $serializer->deserialize($request->getContent(), Category::class, "json", ["object_to_populate" => $category]);
+    /** @var UpdateCategoryRequest $categoryRequest */
+    $categoryRequest = $serializer->deserialize($request->getContent(), UpdateCategoryRequest::class, "json", ["object_to_populate" => $category]);
 
-
-    $errors = $validator->validate($category);
+    $errors = $validator->validate($categoryRequest);
 
     if (count($errors) > 0) {
       $formattedErrors = [];
@@ -122,11 +123,14 @@ final class CategoryController extends AbstractController
       );
     }
 
+    $category->setName($categoryRequest->name);
+    $category->setSlug($categoryRequest->slug);
+
     // Flush
     $entityManager->flush();
 
     return $this->json(
-      $category,
+      $categoryRequest,
       Response::HTTP_OK,
       [],
       ['groups' => ['category:read']]
