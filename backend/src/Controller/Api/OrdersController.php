@@ -6,15 +6,18 @@ use App\Entity\Order;
 use App\Entity\OrderItem;
 use App\Entity\ProductVariant;
 use App\Repository\ProductVariantRepository;
+use App\DTO\CreateOrderRequest;
+//
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Attribute\Route;
-use Doctrine\ORM\EntityManagerInterface;
-// Validation
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\HttpFoundation\Request;
+//
+use Doctrine\ORM\EntityManagerInterface;
 
 final class OrdersController extends AbstractController
 {
@@ -32,66 +35,90 @@ final class OrdersController extends AbstractController
     Request $request,
     ValidatorInterface $validator,
     EntityManagerInterface $entityManager,
-    ProductVariantRepository $productVariantRepository
+    ProductVariantRepository $productVariantRepository,
+    SerializerInterface $serializer
   ) {
 
-    // Read JSON
-    $data = $request->toArray();
+    /** @var CreateOrderRequest $ordersRequest */
+    $ordersRequest = $serializer->deserialize($request->getContent(), CreateOrderRequest::class, 'json');
 
-    // Validation Rules (Maybe could store this somewhere else.)
-    $constraints = new Assert\Collection([
-      'customerName' => [
-        new Assert\NotBlank(),
-        new Assert\Type('string'),
-      ],
-      'customerEmail' => [
-        new Assert\NotBlank(),
-        new Assert\Email()
-      ],
-      'items' => [
-        new Assert\NotBlank(),
-        new Assert\Type('array'),
-        new Assert\Count(min: 1),
-        new Assert\All([
-          new Assert\Collection([
-            'productVariantId' => [
-              new Assert\NotBlank(),
-              new Assert\Type('integer'),
-              new Assert\Positive(),
-            ],
-            'quantity' => [
-              new Assert\NotBlank(),
-              new Assert\Type('integer'),
-              new Assert\Positive()
-            ],
-          ])
-        ])
-      ]
-    ]);
-
-    // Validate the request data
-    $errors = $validator->validate($data, $constraints);
-
-    // if validation fails
+    $errors = $validator->validate($ordersRequest);
     if (count($errors) > 0) {
       $formattedErrors = [];
+      //
       foreach ($errors as $error) {
-        $formattedErrors[] = [
-          'field' => $error->getPropertyPath(),
-          'message' => $error->getMessage()
-        ];
-      };
-      return $this->json(['errors' => $formattedErrors], Response::HTTP_UNPROCESSABLE_ENTITY);
-    };
+        $field = $error->getPropertyPath();
+        $formattedErrors[$field][] = $error->getMessage();
+      }
+      //
+      return $this->json(
+        ['errors' => $formattedErrors],
+        Response::HTTP_UNPROCESSABLE_ENTITY
+      );
+    }
+
+    //*********************************************************//
+    // OLD WAY WITHOUT DTO ABSTRACTION.
+    // Read JSON
+    // $data = $request->toArray();
+
+    // Validation Rules (Maybe could store this somewhere else.)
+    // $constraints = new Assert\Collection([
+    //   'customerName' => [
+    //     new Assert\NotBlank(),
+    //     new Assert\Type('string'),
+    //   ],
+    //   'customerEmail' => [
+    //     new Assert\NotBlank(),
+    //     new Assert\Email()
+    //   ],
+    //   'items' => [
+    //     new Assert\NotBlank(),
+    //     new Assert\Type('array'),
+    //     new Assert\Count(min: 1),
+    //     new Assert\All([
+    //       new Assert\Collection([
+    //         'productVariantId' => [
+    //           new Assert\NotBlank(),
+    //           new Assert\Type('integer'),
+    //           new Assert\Positive(),
+    //         ],
+    //         'quantity' => [
+    //           new Assert\NotBlank(),
+    //           new Assert\Type('integer'),
+    //           new Assert\Positive()
+    //         ],
+    //       ])
+    //     ])
+    //   ]
+    // ]);
+
+    // Validate the request data
+    // $errors = $validator->validate($data, $constraints);
+
+    // if validation fails
+    // if (count($errors) > 0) {
+    //   $formattedErrors = [];
+    //   foreach ($errors as $error) {
+    //     $formattedErrors[] = [
+    //       'field' => $error->getPropertyPath(),
+    //       'message' => $error->getMessage()
+    //     ];
+    //   };
+    //   return $this->json(['errors' => $formattedErrors], Response::HTTP_UNPROCESSABLE_ENTITY);
+    // };
 
     // Load Products
     // $productVariantRepo = $entityManager->getRepository(ProductVariantRepository::class);
 
-    $customerName = $data['customerName'];
-    $customerEmail = $data['customerEmail'];
-    $orderItems = $data['items'];
+    // $customerName = $data['customerName'];
+    // $customerEmail = $data['customerEmail'];
+    // $orderItems = $data['items'];
+    //*********************************************************//
+    
 
-    $productCheck = $productVariantRepository->checkStockAndPrices($orderItems);
+    
+    $productCheck = $productVariantRepository->checkStockAndPrices($ordersRequest->items);
     // return [
     // 'isInStock' => $isInStock,
     // 'total' => $total,
@@ -106,8 +133,8 @@ final class OrdersController extends AbstractController
 
     // Create Order
     $order = new Order();
-    $order->setCustomerName($customerName);
-    $order->setCustomerEmail($customerEmail);
+    $order->setCustomerName($ordersRequest->customerName);
+    $order->setCustomerEmail($ordersRequest->customerEmail);
     $order->setTotal($productCheck['total']);
     $order->setStatus("Pending");
     $order->setCreatedAt(new \DateTimeImmutable());
