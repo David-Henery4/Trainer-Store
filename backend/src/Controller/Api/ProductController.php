@@ -215,5 +215,13 @@ final class ProductController extends AbstractController
   }
 
   #[Route('/api/products/{id}', methods: ["DELETE"])]
-  public function delete(Request $request) {}
+  public function delete(Product $product, EntityManagerInterface $entityManager) {
+    $entityManager->remove($product);
+    $entityManager->flush();
+    return $this->json(
+      ['msg' => 'Successfully Deleted'],
+      Response::HTTP_OK
+    );
+  }
+
 }
