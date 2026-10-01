@@ -1,3 +1,5 @@
+import type { Product } from '$lib/types/ProductType.js';
+
 export async function load({ fetch, params }) {
 	const response = await fetch(`http://localhost:8000/api/products/${params.id}`);
 
@@ -14,7 +16,7 @@ export async function load({ fetch, params }) {
 		return { errors: data.errors };
 	}
 
-	const product = await response.json();
+	const product: Product = await response.json();
 
 	return {
 		product
