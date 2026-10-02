@@ -12,18 +12,29 @@
 			slug: '',
 			description: '',
 			price: '',
-			image_url: '',
-			is_active: false,
+			imageUrl: '',
+			isActive: false,
 			created_at: '',
 			updated_at: '',
-			category_id: null
+			category: {
+        id: null,
+        name: "",
+        slug: ""
+      }
 		};
+	};
+	const categories = () => {
+		if (data.categories) {
+			return [...data.categories];
+		}
+		return [];
 	};
 	let isEdit = $state(false);
 	const handleEditChange = () => (!isEdit ? (isEdit = true) : (isEdit = false));
 	$effect(() => {
 		console.log('Edit Status: ', isEdit);
 	});
+  let selectedCategoryId = $state(product().category.id);
 </script>
 
 <a href="/admin/products">Back</a>
@@ -38,8 +49,8 @@
 	<button class="my-6 border px-4 py-2 hover:cursor-pointer"> Cancel </button>
 </div>
 
-<form class={`w-full max-w-80 border p-4 ${!isEdit && "opacity-50" }`}>
-	<fieldset disabled={!isEdit} >
+<form class={`w-full max-w-80 border p-4 ${!isEdit && 'opacity-50'}`}>
+	<fieldset disabled={!isEdit}>
 		<Input
 			id={'name'}
 			label={'name'}
@@ -49,15 +60,18 @@
 			value={product().name}
 		/>
 		<!-- Need to fetch the category with the product -->
-		<Input id={'category'} label={'category'} name={'category'} type={'text'} />
-		<!-- <div>
-    <label for="category">Category</label>
-    <select name="category" id="category">
-      {#each data.categories as category}
-      <option value={category.id}>{category.name}</option>
-      {/each}
+		<!-- <Input id={'category'} label={'category'} name={'category'} type={'text'} /> -->
+		<div>
+			<label for="category">Category</label>
+			<select bind:value={selectedCategoryId} required name="category" id="category">
+				{#each categories() as category}
+					<option
+						value={category.id}>{category.name}</option
+					>
+				{/each}
+				<!-- Loop through and find the current product category and select that as default (Add "selected" to the option element.) -->
 			</select>
-      </div> -->
+		</div>
 		<!--**************************************-->
 		<Input id={'brand'} label={'brand'} name={'brand'} type={'text'} value={product().brand} />
 		<Input id={'slug'} label={'slug'} name={'slug'} type={'text'} value={product().slug} />
@@ -67,7 +81,7 @@
 			label={'Is a active product?'}
 			name={'activeProduct'}
 			type={'checkbox'}
-			value={product().is_active}
+			value={product().isActive}
 		/>
 		<Input
 			id={'description'}

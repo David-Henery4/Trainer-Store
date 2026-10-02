@@ -13,6 +13,8 @@
 	const { label, id, name, type, autocomplete = 'off', isTextarea = false, isEdit = false, value= "" }: Props = $props();
 </script>
 
+<!--  I WAS HERE IMPLEMENTING THE "ISACTIVE" DEFAULT STATE! -->
+
 <div>
 	<label for={id} class="capitalize">{label}</label>
 	{#if isTextarea}

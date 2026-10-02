@@ -9,7 +9,12 @@
   </title>
 </svelte:head>
 
-<h1>Welcome to the ADMIN DASHBOARD</h1>
 
-{@render children()}
+<main class="p-8">
 
+  
+  <h1>Welcome to the ADMIN DASHBOARD</h1>
+
+  {@render children()}
+  
+</main>

@@ -44,15 +44,19 @@ class Product
     private ?string $price = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+  #[Groups(['product:read'])]
     private ?string $imageUrl = null;
 
     #[ORM\Column]
+  #[Groups(['product:read'])]
     private ?bool $isActive = null;
 
     #[ORM\Column]
+    #[Groups(['product:read'])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column]
+    #[Groups(['product:read'])]
     private ?\DateTimeImmutable $updatedAt = null;
 
     /**
