@@ -82,12 +82,13 @@
 			name={'activeProduct'}
 			type={'checkbox'}
 			value={product().isActive}
+      checked={product().isActive}
 		/>
 		<Input
 			id={'description'}
 			label={'description'}
 			name={'description'}
-			type={'off'}
+			type={'text'}
 			isTextarea={true}
 			value={product().description}
 		/>
